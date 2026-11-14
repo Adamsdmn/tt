@@ -129,6 +129,47 @@
 const $ = id => document.getElementById(id);
 const dl = (src, name) => `/api/dl?src=${encodeURIComponent(src)}&name=${encodeURIComponent(name)}`;
 
+// --- iPhone: сохранение прямо в галерею через меню "Поделиться" ---
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const CAN_GALLERY = IOS && !!navigator.canShare;
+const fileCache = new Map();
+const mimeOf = n => n.endsWith(".mp4") ? "video/mp4" : n.endsWith(".mp3") ? "audio/mpeg" : "image/jpeg";
+
+async function loadFiles(items) {
+  return Promise.all(items.map(async it => {
+    if (!fileCache.has(it.src)) {
+      const r = await fetch(dl(it.src, it.name));
+      if (!r.ok) throw new Error("load failed");
+      const b = await r.blob();
+      fileCache.set(it.src, new File([b], it.name, { type: mimeOf(it.name) }));
+    }
+    return fileCache.get(it.src);
+  }));
+}
+
+// Вешает на кнопку: скачать файл(ы) -> открыть меню "Поделиться" (там "Сохранить видео/изображение")
+function galleryBtn(el, items) {
+  const orig = el.textContent;
+  const long = orig.length > 3;
+  el.addEventListener("click", async e => {
+    e.preventDefault();
+    const ready = items.every(it => fileCache.has(it.src));
+    try {
+      if (!ready) { el.textContent = long ? "Загружаю…" : "⏳"; await loadFiles(items); }
+      const files = items.map(it => fileCache.get(it.src));
+      if (!navigator.canShare({ files })) throw new Error("cannot share");
+      await navigator.share({ files });   // при готовом файле вызывается сразу в момент нажатия
+      el.textContent = orig;
+    } catch (err) {
+      if (err && err.name === "AbortError") { el.textContent = orig; return; }
+      // iOS иногда требует свежее нажатие после долгой загрузки — файл уже в кэше
+      if (err && err.name === "NotAllowedError") { el.textContent = long ? "✅ Готово — нажми ещё раз" : "✅"; return; }
+      el.textContent = orig;
+      if (el.href) location.href = el.href;   // запасной вариант — обычное скачивание
+    }
+  });
+}
+
 $("paste").onclick = async () => {
   try { $("url").value = await navigator.clipboard.readText(); $("url").focus(); }
   catch { $("err").textContent = "Не получилось вставить — вставь вручную"; }
@@ -160,32 +201,40 @@ function render(d) {
   $("title").textContent = d.title || "";
 
   const act = $("actions"); act.innerHTML = "";
-  const add = (cls, text, href) => {
+  const add = (cls, text, href, gallery) => {
     const a = document.createElement("a");
     a.className = "btn " + cls; a.textContent = text; a.href = href;
     act.appendChild(a);
+    if (gallery && CAN_GALLERY) galleryBtn(a, gallery);
   };
   const isSlideshow = d.images && d.images.length;
   if (!isSlideshow) {
-    if (d.hd) add("v", "⬇ Видео HD", dl(d.hd, "tiktok_hd.mp4"));
-    if (d.video) add("", "⬇ Видео (обычное)", dl(d.video, "tiktok.mp4"));
+    const g = CAN_GALLERY;
+    if (d.hd) add("v", g ? "📲 Видео HD в галерею" : "⬇ Видео HD", dl(d.hd, "tiktok_hd.mp4"), [{ src: d.hd, name: "tiktok_hd.mp4" }]);
+    if (d.video) add("", g ? "📲 Видео (обычное) в галерею" : "⬇ Видео (обычное)", dl(d.video, "tiktok.mp4"), [{ src: d.video, name: "tiktok.mp4" }]);
   }
   if (d.music) add("a", "🎵 Скачать звук", dl(d.music, "tiktok_audio.mp3"));
 
   const ph = $("photos"); ph.innerHTML = "";
   if (isSlideshow) {
-    ph.innerHTML = `<div class="photos-title"><span>📸 Фото (${d.images.length})</span><button class="all" id="all">Скачать все</button></div><div class="grid" id="grid"></div>`;
+    ph.innerHTML = `<div class="photos-title"><span>📸 Фото (${d.images.length})</span><button class="all" id="all">${CAN_GALLERY ? "Все в галерею" : "Скачать все"}</button></div><div class="grid" id="grid"></div>`;
     const grid = $("grid");
-    d.images.forEach((src, i) => {
+    const items = d.images.map((src, i) => ({ src, name: `tiktok_${i + 1}.jpg` }));
+    items.forEach((it, i) => {
       const box = document.createElement("div"); box.className = "ph";
-      const img = document.createElement("img"); img.src = src; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
-      const a = document.createElement("a"); a.href = dl(src, `tiktok_${i + 1}.jpg`); a.textContent = "⬇";
+      const img = document.createElement("img"); img.src = it.src; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+      const a = document.createElement("a"); a.href = dl(it.src, it.name); a.textContent = "⬇";
+      if (CAN_GALLERY) galleryBtn(a, [it]);
       box.append(img, a); grid.appendChild(box);
     });
-    $("all").onclick = () => {
-      [...grid.querySelectorAll("a")].forEach((a, i) =>
-        setTimeout(() => { const t = document.createElement("a"); t.href = a.href; t.click(); }, i * 500));
-    };
+    if (CAN_GALLERY) {
+      galleryBtn($("all"), items);   // все фото одним меню "Сохранить N изображений"
+    } else {
+      $("all").onclick = () => {
+        [...grid.querySelectorAll("a")].forEach((a, i) =>
+          setTimeout(() => { const t = document.createElement("a"); t.href = a.href; t.click(); }, i * 500));
+      };
+    }
   }
   $("res").style.display = "block";
   $("res").scrollIntoView({ behavior: "smooth", block: "nearest" });
