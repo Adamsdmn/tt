@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0716">
+<title>Качалка TikTok ✨</title>
+<style>
+  :root{
+    --bg:#0b0716; --card:rgba(255,255,255,.07); --stroke:rgba(255,255,255,.14);
+    --txt:#f5f3ff; --muted:#a79fc4; --pink:#ff3d81; --cyan:#27e8e0; --violet:#8b5cf6;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--txt);
+    display:flex;justify-content:center;padding:28px 16px 60px;
+    overflow-x:hidden;
+  }
+  /* плавающие размытые пятна на фоне */
+  .blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.55;z-index:-1;animation:float 14s ease-in-out infinite}
+  .b1{width:380px;height:380px;background:var(--pink);top:-120px;left:-100px}
+  .b2{width:340px;height:340px;background:var(--violet);bottom:-100px;right:-80px;animation-delay:-5s}
+  .b3{width:260px;height:260px;background:var(--cyan);top:40%;left:55%;opacity:.3;animation-delay:-9s}
+  @keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-30px) scale(1.12)}}
+
+  .wrap{width:100%;max-width:560px}
+  header{text-align:center;margin:18px 0 26px}
+  .logo{font-size:44px;line-height:1;margin-bottom:8px;animation:pop 2.4s ease-in-out infinite}
+  @keyframes pop{0%,100%{transform:scale(1) rotate(-4deg)}50%{transform:scale(1.12) rotate(4deg)}}
+  h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.5px;
+     background:linear-gradient(90deg,var(--pink),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);margin-top:8px;font-size:15px}
+
+  .glass{background:var(--card);border:1px solid var(--stroke);border-radius:22px;
+         backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:16px}
+
+  .field{display:flex;gap:8px}
+  input{
+    flex:1;min-width:0;padding:15px 16px;border-radius:14px;border:1px solid var(--stroke);
+    background:rgba(0,0,0,.28);color:var(--txt);font-size:16px;outline:none;transition:.2s
+  }
+  input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(39,232,224,.18)}
+  input::placeholder{color:#7c749c}
+  .paste{padding:0 16px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.08);
+         color:var(--txt);font-size:15px;cursor:pointer;transition:.2s}
+  .paste:active{transform:scale(.96)}
+
+  .go{
+    width:100%;margin-top:12px;padding:16px;border:0;border-radius:14px;cursor:pointer;
+    font-size:17px;font-weight:700;color:#fff;
+    background:linear-gradient(100deg,var(--pink),var(--violet));
+    box-shadow:0 10px 30px -8px rgba(255,61,129,.6);transition:.2s
+  }
+  .go:hover{filter:brightness(1.1)} .go:active{transform:scale(.98)}
+  .go:disabled{opacity:.6;cursor:wait}
+
+  .err{margin-top:14px;text-align:center;color:#ff8fa8;font-size:14px;min-height:18px}
+
+  #res{display:none;margin-top:20px;animation:rise .45s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .top{display:flex;gap:14px;align-items:center}
+  .cover{width:96px;height:128px;border-radius:14px;object-fit:cover;background:#1b1530;flex:none}
+  .meta{min-width:0}
+  .author{color:var(--cyan);font-weight:700;font-size:14px}
+  .title{margin-top:4px;font-size:14px;color:#ddd8f0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+
+  .actions{display:grid;gap:10px;margin-top:16px}
+  a.btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;border-radius:14px;
+    text-decoration:none;font-weight:700;font-size:16px;color:#fff;transition:.2s;border:1px solid var(--stroke);
+    background:rgba(255,255,255,.08)
+  }
+  a.btn:active{transform:scale(.97)}
+  a.v{background:linear-gradient(100deg,var(--pink),#ff7a3d);border:0}
+  a.a{background:linear-gradient(100deg,var(--cyan),#3b82f6);color:#06121f;border:0}
+
+  .photos-title{margin:18px 0 10px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .all{background:none;border:1px solid var(--stroke);color:var(--txt);padding:7px 12px;border-radius:10px;cursor:pointer;font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .ph{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#1b1530}
+  .ph img{width:100%;height:100%;object-fit:cover}
+  .ph a{position:absolute;right:6px;bottom:6px;width:34px;height:34px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);
+        backdrop-filter:blur(6px);color:#fff;text-decoration:none;font-size:16px}
+
+  .spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);
+        border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite;vertical-align:-3px;margin-right:8px}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  footer{text-align:center;color:#6f6790;font-size:12px;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+
+<div class="wrap">
+  <header>
+    <div class="logo">🎬</div>
+    <h1>Качалка TikTok</h1>
+    <div class="sub">Видео, фото и звук — без водяного знака</div>
+  </header>
+
+  <div class="glass">
+    <div class="field">
+      <input id="url" type="url" inputmode="url" autocomplete="off" placeholder="Вставь ссылку на TikTok">
+      <button class="paste" id="paste" title="Вставить из буфера">📋</button>
+    </div>
+    <button class="go" id="go">Найти ✨</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="glass" id="res">
+    <div class="top">
+      <img class="cover" id="cover" alt="" referrerpolicy="no-referrer">
+      <div class="meta">
+        <div class="author" id="author"></div>
+        <div class="title" id="title"></div>
+      </div>
+    </div>
+    <div class="actions" id="actions"></div>
+    <div id="photos"></div>
+  </div>
+
+  <footer>Скачивай только то, что можно 💜</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const dl = (src, name) => `/api/dl?src=${encodeURIComponent(src)}&name=${encodeURIComponent(name)}`;
+
+$("paste").onclick = async () => {
+  try { $("url").value = await navigator.clipboard.readText(); $("url").focus(); }
+  catch { $("err").textContent = "Не получилось вставить — вставь вручную"; }
+};
+$("url").addEventListener("keydown", e => { if (e.key === "Enter") $("go").click(); });
+
+$("go").onclick = async () => {
+  const url = $("url").value.trim();
+  $("err").textContent = ""; $("res").style.display = "none";
+  if (!url) return;
+  const btn = $("go"); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Ищу…';
+  try {
+    const r = await fetch("/api/info?url=" + encodeURIComponent(url));
+    const raw = await r.text();
+    let d;
+    try { d = JSON.parse(raw); }
+    catch { throw new Error(`Сервер ответил не так (код ${r.status}). ` + (r.status === 404 ? "Функция /api/info не найдена — проверь, что файлы лежат в папке api/" : raw.slice(0, 120))); }
+    if (!r.ok) throw new Error(d.error || "Ошибка");
+    render(d);
+  } catch (e) {
+    $("err").textContent = e.message;
+  }
+  btn.disabled = false; btn.textContent = "Найти ✨";
+};
+
+function render(d) {
+  $("cover").src = d.cover || (d.images && d.images[0]) || "";
+  $("author").textContent = d.author ? "@" + d.author : "";
+  $("title").textContent = d.title || "";
+
+  const act = $("actions"); act.innerHTML = "";
+  const add = (cls, text, href) => {
+    const a = document.createElement("a");
+    a.className = "btn " + cls; a.textContent = text; a.href = href;
+    act.appendChild(a);
+  };
+  const isSlideshow = d.images && d.images.length;
+  if (!isSlideshow) {
+    if (d.hd) add("v", "⬇ Видео HD", dl(d.hd, "tiktok_hd.mp4"));
+    if (d.video) add("", "⬇ Видео (обычное)", dl(d.video, "tiktok.mp4"));
+  }
+  if (d.music) add("a", "🎵 Скачать звук", dl(d.music, "tiktok_audio.mp3"));
+
+  const ph = $("photos"); ph.innerHTML = "";
+  if (isSlideshow) {
+    ph.innerHTML = `<div class="photos-title"><span>📸 Фото (${d.images.length})</span><button class="all" id="all">Скачать все</button></div><div class="grid" id="grid"></div>`;
+    const grid = $("grid");
+    d.images.forEach((src, i) => {
+      const box = document.createElement("div"); box.className = "ph";
+      const img = document.createElement("img"); img.src = src; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+      const a = document.createElement("a"); a.href = dl(src, `tiktok_${i + 1}.jpg`); a.textContent = "⬇";
+      box.append(img, a); grid.appendChild(box);
+    });
+    $("all").onclick = () => {
+      [...grid.querySelectorAll("a")].forEach((a, i) =>
+        setTimeout(() => { const t = document.createElement("a"); t.href = a.href; t.click(); }, i * 500));
+    };
+  }
+  $("res").style.display = "block";
+  $("res").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+</script>
+</body>
+</html>
