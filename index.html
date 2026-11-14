@@ -142,7 +142,10 @@ $("go").onclick = async () => {
   const btn = $("go"); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Ищу…';
   try {
     const r = await fetch("/api/info?url=" + encodeURIComponent(url));
-    const d = await r.json();
+    const raw = await r.text();
+    let d;
+    try { d = JSON.parse(raw); }
+    catch { throw new Error(`Сервер ответил не так (код ${r.status}). ` + (r.status === 404 ? "Функция /api/info не найдена — проверь, что файлы лежат в папке api/" : raw.slice(0, 120))); }
     if (!r.ok) throw new Error(d.error || "Ошибка");
     render(d);
   } catch (e) {

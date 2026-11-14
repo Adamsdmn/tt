@@ -16,6 +16,14 @@ async function ask(url) {
 }
 
 export default async function handler(req) {
+  try {
+    return await run(req);
+  } catch (e) {
+    return json({ error: 'Сервер не смог достучаться до API: ' + (e && e.message ? e.message : e) }, 502);
+  }
+}
+
+async function run(req) {
   const url = new URL(req.url).searchParams.get('url') || '';
   let host = '';
   try {
